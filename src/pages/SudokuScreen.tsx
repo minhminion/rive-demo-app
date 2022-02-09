@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react'
 import { generateSudoku } from '../utils/sudoku'
 
@@ -7,10 +8,36 @@ interface SudokuCell {
   isWrong: boolean | null
 }
 
+enum SudokuGameMode {
+  Standard,
+  SandBox,
+  Free,
+}
+
+const GameModeOption = [
+  {
+    title: 'Standard',
+    value: SudokuGameMode.Standard,
+  },
+  {
+    title: 'SandBox',
+    value: SudokuGameMode.SandBox,
+  },
+  {
+    title: 'Free',
+    value: SudokuGameMode.Free,
+  },
+]
+
 const SudokuScreen = () => {
   const MAX_LEVEL = 7
   const MIN_LEVEL = 3
+  const MAX_WRONG_ANS = 3
 
+  const [gameMode, setGameMode] = useState<SudokuGameMode>(
+    SudokuGameMode.Standard,
+  )
+  const [countWrongAns, setCountWrongAns] = useState(0)
   const [gameLevel, setGameLevel] = useState(MIN_LEVEL)
   const [initSudoku, setInitSudoku] = useState<SudokuCell[][]>([
     [{ num: '', readOnly: true, isWrong: false }],
@@ -27,6 +54,7 @@ const SudokuScreen = () => {
   const initialGame = (level: number) => {
     let defaultSudokuMatrix = generateSudoku()
 
+    setCountWrongAns(0)
     setInitSudoku(JSON.parse(JSON.stringify(defaultSudokuMatrix)))
 
     for (let i = 0; i < defaultSudokuMatrix.length; ++i) {
@@ -58,7 +86,7 @@ const SudokuScreen = () => {
         if (initCell.num !== value.num) {
           value.isWrong = true
           countWrongAns++
-          if (value.num === '') value.num = initCell.num
+          value.num = initCell.num
         } else {
           value.isWrong = false
         }
@@ -75,10 +103,34 @@ const SudokuScreen = () => {
   }
 
   const handleOnChangeCell = (value: number, row: number, cell: number) => {
-    const updateSudoku = [...sudoku]
+    const updateSudoku = JSON.parse(JSON.stringify(sudoku))
+    let tempCountWrong = countWrongAns
     updateSudoku[row][cell].num = value
 
+    if (!isNaN(value)) {
+      switch (gameMode) {
+        case SudokuGameMode.Standard:
+          updateSudoku[row][cell].isWrong =
+            initSudoku[row][cell].num === value ? false : true
+          break
+        default:
+          updateSudoku[row][cell].isWrong = null
+          break
+      }
+      updateSudoku[row][cell].isWrong === true &&
+      tempCountWrong++
+    }
+    
+    setCountWrongAns(tempCountWrong)
     setSudoku(updateSudoku)
+
+    checkCountWrong(tempCountWrong)
+  }
+
+  const checkCountWrong = (number: number) => {
+    if (number === MAX_WRONG_ANS) {
+      checkCorrectSudoku()
+    }
   }
 
   const handleChangeLevel = (value: number) => {
@@ -100,22 +152,41 @@ const SudokuScreen = () => {
         alignItems: 'center',
       }}
     >
-      <div style={{ display: 'block' }}>
-        Setting
-        <input
-          name="gameLevel"
-          type="number"
-          min={MIN_LEVEL}
-          max={MAX_LEVEL}
-          value={gameLevel}
-          onChange={(e) => handleChangeLevel(parseInt(e.target.value))}
-        />
-        <button name="gameRefresh" onClick={(e) => initialGame(gameLevel)}>
-          Refresh
-        </button>
-        <button name="gameCheck" onClick={(e) => checkCorrectSudoku()}>
-          Check
-        </button>
+      <div style={{ display: 'block', color: 'white' }}>
+        <div style={{ marginBottom: 10 }}>
+          <h3>Wrong Ans: {countWrongAns}</h3>
+          <input
+            name="gameLevel"
+            type="number"
+            min={MIN_LEVEL}
+            max={MAX_LEVEL}
+            value={gameLevel}
+            onChange={(e) => handleChangeLevel(parseInt(e.target.value))}
+          />
+          <button name="gameRefresh" onClick={(e) => initialGame(gameLevel)}>
+            Refresh
+          </button>
+          <button name="gameCheck" onClick={(e) => checkCorrectSudoku()}>
+            Check
+          </button>
+        </div>
+        <div>
+          Game Mode
+          <br />
+          {GameModeOption.map((item: any) => (
+            <label className="container">
+              {item.title}
+              <input
+                type="radio"
+                name="gameMode"
+                checked={item.value === gameMode}
+                value={item.value}
+                onChange={() => setGameMode(item.value)}
+              />
+              <span className="checkmark"></span>
+            </label>
+          ))}
+        </div>
       </div>
       <div className="sudoku">
         <div className="sudoku__board">
