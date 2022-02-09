@@ -53,7 +53,7 @@ const SudokuScreen = () => {
       row.forEach((value: SudokuCell, cellIndex: number) => {
         const initCell = initSudoku[rowIndex][cellIndex]
 
-        if(value.readOnly) return
+        if (value.readOnly) return
 
         if (initCell.num !== value.num) {
           value.isWrong = true
@@ -66,7 +66,6 @@ const SudokuScreen = () => {
     )
 
     setSudoku(answerSudoku)
-    console.log("🚀 Minh =====>  ~ file: SudokuScreen.tsx ~ line 67 ~ answerSudoku", answerSudoku)
 
     if (countWrongAns > 0) {
       alert('False')
@@ -80,6 +79,16 @@ const SudokuScreen = () => {
     updateSudoku[row][cell].num = value
 
     setSudoku(updateSudoku)
+  }
+
+  const handleChangeLevel = (value: number) => {
+    if (isNaN(value) || value > MAX_LEVEL || value < MIN_LEVEL) {
+      setGameLevel(MIN_LEVEL)
+      return
+    } else {
+      setGameLevel(value)
+      return
+    }
   }
 
   return (
@@ -96,8 +105,10 @@ const SudokuScreen = () => {
         <input
           name="gameLevel"
           type="number"
+          min={MIN_LEVEL}
+          max={MAX_LEVEL}
           value={gameLevel}
-          onChange={(e) => setGameLevel(parseInt(e.target.value))}
+          onChange={(e) => handleChangeLevel(parseInt(e.target.value))}
         />
         <button name="gameRefresh" onClick={(e) => initialGame(gameLevel)}>
           Refresh
